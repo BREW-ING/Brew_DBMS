@@ -1,0 +1,25 @@
+name: Embed Signals
+
+on:
+  schedule:
+    - cron: "30 */6 * * *"   # 30 min after each ingest run, every 6 hours
+  workflow_dispatch: {}
+
+jobs:
+  embed:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ingestion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Run embedding job
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EMBEDDING_MODEL: ${{ secrets.EMBEDDING_MODEL }}
+          EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
+        run: python jobs/embed_signals.py
