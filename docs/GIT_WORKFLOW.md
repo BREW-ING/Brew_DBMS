@@ -1,6 +1,6 @@
 # Brew — Git & GitHub Workflow
 
-This is the checklist for actually getting the project onto GitHub and keeping it looking actively maintained — this matters for a resume/SIE project, not just for submission.
+How we set up the repository, structure commits and branches, and run CI.
 
 ## 1. One-time setup
 
@@ -23,7 +23,7 @@ gh repo create brew --public --source=. --remote=origin --push
 
 ## 2. Commit cadence
 
-Commit **after each build phase completes and runs**, not after every single file — matches the phase structure in `BREW_BUILD_SPEC.md` Section 6.
+Commit **after each build phase completes and runs**, not after every single file.
 
 | Phase | Example commit message |
 |---|---|
@@ -35,20 +35,18 @@ Commit **after each build phase completes and runs**, not after every single fil
 | 5 | `feat(phase-5): triggers, stored procedure, materialized view` |
 | 6 | `ci(phase-6): scheduled ingestion + deployment` |
 
-Use `type(scope): description` (Conventional Commits) throughout — it's a small thing that reads as more professional to anyone browsing the repo's history.
+Use `type(scope): description` ([Conventional Commits](https://www.conventionalcommits.org/)) throughout.
 
-## 3. Branching (keep it simple for a 2-person team)
+## 3. Branching
 
 - `main` — always deployable
 - One short-lived branch per feature/phase: `feat/ingestion-adapters`, `feat/teammate-matching`, etc.
-- Open a PR into `main` even if you're the only reviewer — it gives you a visible PR history, which is a small but real resume signal ("used PR-based workflow").
+- Merge into `main` through a pull request, even when there is no second reviewer, so every change has a reviewable record.
 
-## 4. Keeping the repo visibly "alive"
+## 4. Automated workflows
 
-A repo that hasn't been touched in months looks abandoned to a recruiter skimming GitHub. Two low-effort ways to keep commit activity honest and ongoing rather than padded:
-
-1. **The scheduled ingestion/embedding jobs themselves** (`.github/workflows/ingest.yml`, `embed.yml`) run automatically — they don't create commits, but a green Actions history on the repo is itself a signal of an actively-running system, which is more convincing than commit padding.
-2. **A lightweight CI workflow** (below) that runs lint/build checks on every push — shows the project has real automated checks, not just code dumped into a repo.
+1. **Scheduled ingestion and embedding** (`.github/workflows/ingest.yml`, `embed.yml`) run on a cron schedule and can be triggered manually from the Actions tab.
+2. **CI** (below) runs lint and build checks on every push and pull request to `main`.
 
 ### `.github/workflows/ci.yml`
 ```yaml
@@ -91,7 +89,7 @@ jobs:
 
 ## 5. Secrets on GitHub (for the scheduled workflows)
 
-Do **not** commit `.env` or `.env.local`. Instead, add each key from Section 7 of `BREW_BUILD_SPEC.md` under:
+Do **not** commit `.env` or `.env.local`. Instead, add each key listed in `services/ingestion/.env.example` and `apps/web/.env.local.example` under:
 
 **Repo → Settings → Secrets and variables → Actions → New repository secret**
 
@@ -103,5 +101,5 @@ Then reference them in `ingest.yml`/`embed.yml` as `${{ secrets.GITHUB_TOKEN }}`
 - Architecture diagram (copy from `ARCHITECTURE.md`, Section 3)
 - Tech stack table
 - Setup instructions (link to `.env.example` files)
-- A short GIF/screenshot of the dashboard once Phase 3 is done — this alone meaningfully improves how the repo reads to a visitor
+- A short GIF or screenshot of the dashboard once Phase 3 is done
 - Link to `docs/ARCHITECTURE.md` and `docs/API.md` for anyone who wants depth without cluttering the README itself

@@ -27,7 +27,7 @@ Returns ranked project-idea suggestions for the signed-in user.
       "id": "uuid",
       "signal": {
         "title": "string",
-        "source": "github | arxiv | news",
+        "source": "github | arxiv | hn",
         "url": "string",
         "category_tags": ["string"]
       },
