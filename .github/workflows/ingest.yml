@@ -21,4 +21,4 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: python jobs/fetch_signals.py
+        run: python -m jobs.fetch_signals

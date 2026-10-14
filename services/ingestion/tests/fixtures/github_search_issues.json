@@ -1,0 +1,189 @@
+{
+  "total_count": 9,
+  "incomplete_results": false,
+  "items": [
+    {
+      "url": "https://api.github.com/repos/opencarbon/meter/issues/412",
+      "repository_url": "https://api.github.com/repos/opencarbon/meter",
+      "html_url": "https://github.com/opencarbon/meter/issues/412",
+      "node_id": "I_node_412",
+      "number": 412,
+      "title": "  Support exporting emissions reports as CSV  ",
+      "user": {
+        "login": "maria",
+        "type": "User"
+      },
+      "state": "open",
+      "comments": 6,
+      "reactions": {
+        "total_count": 5
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "<!-- Thanks for opening a feature request! -->\r\n### Problem\r\nField teams share monthly emissions with auditors, but the dashboard only renders charts. Auditors re-type numbers from screenshots, which is slow and error-prone, and smaller organisations without an analyst give up on reporting entirely.\r\n\r\n![screenshot](https://user-images.githubusercontent.com/1/chart.png)\r\n<img width=\"600\" src=\"https://github.com/user-attachments/assets/abc\">\r\n\r\n```python\r\nreport = meter.report(month=9)\r\nreport.to_csv()  # AttributeError\r\n```\r\n\r\n\r\n\r\n### Proposal\r\nAdd a `to_csv()` export next to the chart download button.\r\n\r\n[![CI](https://img.shields.io/badge/ci-passing-green)](https://ci.example.com)"
+    },
+    {
+      "url": "https://api.github.com/repos/a11y-kit/reader/issues/88",
+      "repository_url": "https://api.github.com/repos/a11y-kit/reader",
+      "html_url": "https://github.com/a11y-kit/reader/issues/88",
+      "node_id": "I_node_88",
+      "number": 88,
+      "title": "Keyboard shortcut to jump between headings",
+      "user": {
+        "login": "maria",
+        "type": "User"
+      },
+      "state": "open",
+      "comments": 9,
+      "reactions": {
+        "total_count": 20
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "Screen reader users have to tab through every link to reach the next section. Field teams share monthly emissions with auditors, but the dashboard only renders charts. Auditors re-type numbers from screenshots, which is slow and error-prone, and smaller organisations without an analyst give up on reporting entirely."
+    },
+    {
+      "url": "https://api.github.com/repos/opencarbon/meter/issues/415",
+      "repository_url": "https://api.github.com/repos/opencarbon/meter",
+      "html_url": "https://github.com/opencarbon/meter/issues/415",
+      "node_id": "I_node_415",
+      "number": 415,
+      "title": "Add CSV export for monthly reports",
+      "user": {
+        "login": "maria",
+        "type": "User"
+      },
+      "state": "open",
+      "comments": 4,
+      "reactions": {
+        "total_count": 3
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "Field teams share monthly emissions with auditors, but the dashboard only renders charts. Auditors re-type numbers from screenshots, which is slow and error-prone, and smaller organisations without an analyst give up on reporting entirely.",
+      "pull_request": {
+        "url": "https://api.github.com/repos/opencarbon/meter/pulls/415"
+      }
+    },
+    {
+      "url": "https://api.github.com/repos/opencarbon/meter/issues/501",
+      "repository_url": "https://api.github.com/repos/opencarbon/meter",
+      "html_url": "https://github.com/opencarbon/meter/issues/501",
+      "node_id": "I_node_501",
+      "number": 501,
+      "title": "[BFW-7446][ENHANCEMENT] Allow automatic offset tool calibration",
+      "user": {
+        "login": "maria",
+        "type": "User"
+      },
+      "state": "open",
+      "comments": 4,
+      "reactions": {
+        "total_count": 3
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "Field teams share monthly emissions with auditors, but the dashboard only renders charts. Auditors re-type numbers from screenshots, which is slow and error-prone, and smaller organisations without an analyst give up on reporting entirely."
+    },
+    {
+      "url": "https://api.github.com/repos/opencarbon/meter/issues/502",
+      "repository_url": "https://api.github.com/repos/opencarbon/meter",
+      "html_url": "https://github.com/opencarbon/meter/issues/502",
+      "node_id": "I_node_502",
+      "number": 502,
+      "title": "Rewrite hot path of the log shipper to cut memory use",
+      "user": {
+        "login": "maria",
+        "type": "User"
+      },
+      "state": "open",
+      "comments": 4,
+      "reactions": {
+        "total_count": 3
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "Too slow."
+    },
+    {
+      "url": "https://api.github.com/repos/opencarbon/meter/issues/503",
+      "repository_url": "https://api.github.com/repos/opencarbon/meter",
+      "html_url": "https://github.com/opencarbon/meter/issues/503",
+      "node_id": "I_node_503",
+      "number": 503,
+      "title": "Multi-core/Multithreaded support",
+      "user": {
+        "login": "maria",
+        "type": "User"
+      },
+      "state": "open",
+      "comments": 4,
+      "reactions": {
+        "total_count": 3
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "Field teams share monthly emissions with auditors, but the dashboard only renders charts. Auditors re-type numbers from screenshots, which is slow and error-prone, and smaller organisations without an analyst give up on reporting entirely."
+    },
+    {
+      "url": "https://api.github.com/repos/opencarbon/meter/issues/504",
+      "repository_url": "https://api.github.com/repos/opencarbon/meter",
+      "html_url": "https://github.com/opencarbon/meter/issues/504",
+      "node_id": "I_node_504",
+      "number": 504,
+      "title": "Bump pydantic from 2.6 to 2.9 in the requirements",
+      "user": {
+        "login": "dependabot[bot]",
+        "type": "Bot"
+      },
+      "state": "open",
+      "comments": 4,
+      "reactions": {
+        "total_count": 3
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "Field teams share monthly emissions with auditors, but the dashboard only renders charts. Auditors re-type numbers from screenshots, which is slow and error-prone, and smaller organisations without an analyst give up on reporting entirely."
+    },
+    {
+      "url": "https://api.github.com/repos/opencarbon/meter/issues/505",
+      "repository_url": "https://api.github.com/repos/opencarbon/meter",
+      "html_url": "https://github.com/opencarbon/meter/issues/505",
+      "node_id": "I_node_505",
+      "number": 505,
+      "title": "Fix typo in the contributing guide intro",
+      "user": {
+        "login": "maria",
+        "type": "User"
+      },
+      "state": "open",
+      "comments": 4,
+      "reactions": {
+        "total_count": 3
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "Field teams share monthly emissions with auditors, but the dashboard only renders charts. Auditors re-type numbers from screenshots, which is slow and error-prone, and smaller organisations without an analyst give up on reporting entirely."
+    },
+    {
+      "url": "https://api.github.com/repos/opencarbon/meter/issues/506",
+      "repository_url": "https://api.github.com/repos/opencarbon/meter",
+      "html_url": "https://github.com/opencarbon/meter/issues/506",
+      "node_id": "I_node_506",
+      "number": 506,
+      "title": "[Bug]: Chart export crashes on Safari 17",
+      "user": {
+        "login": "maria",
+        "type": "User"
+      },
+      "state": "open",
+      "comments": 4,
+      "reactions": {
+        "total_count": 3
+      },
+      "created_at": "2026-09-20T08:15:00Z",
+      "updated_at": "2026-10-10T11:02:31Z",
+      "body": "Field teams share monthly emissions with auditors, but the dashboard only renders charts. Auditors re-type numbers from screenshots, which is slow and error-prone, and smaller organisations without an analyst give up on reporting entirely."
+    }
+  ]
+}
