@@ -3,7 +3,7 @@
 Run from services/ingestion:  python -m jobs.fetch_signals
 
 Each source runs independently: a failure in one is logged and reported in the
-summary, and the others still run. The process exits 1 if any source failed,
+summary, run. The process exits 1 if any source failed,
 so the scheduled workflow shows up red.
 """
 
