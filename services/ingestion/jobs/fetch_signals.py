@@ -18,15 +18,17 @@ import psycopg
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
 
+from adapters.arxiv_adapter import ArxivAdapter
 from adapters.base import BaseAdapter
 from adapters.github_adapter import GithubAdapter
 from common.db import get_connection, upsert_signals
 
 log = logging.getLogger("fetch_signals")
 
-# source_type -> factory taking ingestion_sources.config. Add arXiv / HN here.
+# source_type -> factory taking ingestion_sources.config. Add HN here.
 ADAPTERS: dict[str, Callable[[Mapping[str, Any]], BaseAdapter]] = {
     "github": lambda config: GithubAdapter(config),
+    "arxiv": lambda config: ArxivAdapter(config),
 }
 
 # How far back to look when a source has never been fetched. Matches the
