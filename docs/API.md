@@ -27,7 +27,7 @@ Returns ranked project-idea suggestions for the signed-in user.
       "id": "uuid",
       "signal": {
         "title": "string",
-        "source": "github | arxiv | news | reddit",
+        "source": "github | arxiv | news",
         "url": "string",
         "category_tags": ["string"]
       },
@@ -97,7 +97,7 @@ Updates `is_active` or `config` for a source. Requires `role = curator`.
 ```json
 {
   "is_active": true,
-  "config": { "subreddits": ["SideProject", "artificial"] }
+  "config": { "categories": ["cs.LG", "cs.HC"] }
 }
 ```
 
