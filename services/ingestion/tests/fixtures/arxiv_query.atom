@@ -1,0 +1,203 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/fixture</id>
+  <title>arXiv Query: search_query=cat:cs.HC&amp;id_list=&amp;start=0&amp;max_results=100</title>
+  <updated>2026-10-14T18:40:29Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=cat:cs.HC&amp;start=0&amp;max_results=100&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>100</opensearch:itemsPerPage>
+  <opensearch:totalResults>33516</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <!-- Kept: three problem phrases, accessibility keywords. -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.01111v1</id>
+    <title>Screen Reader Navigation of Data Dashboards:
+  A Study with Blind Analysts</title>
+    <updated>2026-10-14T09:12:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.01111v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.01111v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Interactive dashboards have become the default way organisations share data,
+  yet navigating them with a screen reader remains challenging. We interviewed 18 blind
+  and low-vision analysts about their daily work. Participants described a lack of
+  structural cues: charts are announced as single images, filters reset focus, and
+  existing tools fail to expose relationships between linked views. We distil six design
+  requirements and present a prototype that exposes dashboard structure as a navigable tree.</summary>
+    <category term="cs.HC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-14T09:12:00Z</published>
+    <arxiv:primary_category term="cs.HC"/>
+    <author><name>A. Researcher</name></author>
+  </entry>
+  <!-- Kept: version 2, cross-listed, one problem phrase; developer-tools from cs.SE. -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.02222v2</id>
+    <title>Why Do Code Review Bots Get Ignored?</title>
+    <updated>2026-10-12T15:30:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.02222v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2610.02222v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Automated review bots post thousands of comments on pull requests every day.
+  We mined 40,000 bot comments across 300 open-source projects and found that maintainers
+  act on fewer than one in ten. Through follow-up interviews we find that bots fail to
+  explain why a change matters and that their suggestions arrive after a human has already
+  approved the change. We discuss timing, tone, and evidence as levers for bot designers.</summary>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.HC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-30T11:00:00Z</published>
+    <arxiv:primary_category term="cs.SE"/>
+    <author><name>B. Researcher</name></author>
+  </entry>
+  <!-- Dropped: no real-world domain keyword (and no problem phrase). -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.03333v1</id>
+    <title>A Larger Pretraining Corpus for Low-Resource Machine Translation</title>
+    <updated>2026-10-11T08:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.03333v1" rel="alternate" type="text/html"/>
+    <summary>We release a parallel corpus of 12 million sentence pairs covering 40 language
+  pairs. Models pretrained on the corpus improve BLEU by 2.1 points on average over the
+  previous best public baseline. We describe the collection pipeline, deduplication, and
+  quality scoring, and we release all code and model checkpoints under a permissive licence
+  so that others can build on the results.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-11T08:00:00Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author><name>C. Researcher</name></author>
+  </entry>
+  <!-- Dropped: withdrawn (would otherwise match "lack of"). -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.04444v3</id>
+    <title>Detecting Misinformation in Community Health Forums</title>
+    <updated>2026-10-10T08:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.04444v3" rel="alternate" type="text/html"/>
+    <summary>This paper has been withdrawn by the authors due to an error in the evaluation
+  protocol. The lack of a held-out test split means the reported numbers overstate
+  performance; a corrected version will be submitted as a new article once the experiments
+  have been rerun on a properly separated dataset with independent annotators.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-09-01T08:00:00Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author><name>D. Researcher</name></author>
+  </entry>
+  <!-- Dropped: abstract too short. -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.05555v1</id>
+    <title>Gaze Estimation Remains Challenging</title>
+    <updated>2026-10-09T08:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.05555v1" rel="alternate" type="text/html"/>
+    <summary>Short note; gaze estimation for patients remains challenging. Details to follow.</summary>
+    <category term="cs.HC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-09T08:00:00Z</published>
+    <arxiv:primary_category term="cs.HC"/>
+    <author><name>E. Researcher</name></author>
+  </entry>
+  <!-- Dropped: not a paper. -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.06666v1</id>
+    <title>Erratum: Benchmarking Sign Language Recognition in the Wild</title>
+    <updated>2026-10-08T20:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.06666v1" rel="alternate" type="text/html"/>
+    <summary>This erratum corrects Table 3 of our earlier article, in which the accuracy of the
+  pose-only baseline was reported for the wrong split. The corrected figures do not change
+  our conclusions: existing methods struggle with fingerspelling, and the gap between
+  laboratory and in-the-wild footage is still large for every model we evaluated.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-08T20:00:00Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author><name>F. Researcher</name></author>
+  </entry>
+  <!-- Kept: old-style id, revised recently; civic-tech from cs.CY and keywords. -->
+  <entry>
+    <id>http://arxiv.org/abs/cs/0601001v4</id>
+    <title>Online Forms for Public Services: Where Citizens Give Up</title>
+    <updated>2026-10-08T13:00:00Z</updated>
+    <link href="https://arxiv.org/abs/cs/0601001v4" rel="alternate" type="text/html"/>
+    <summary>Many government services are now available only online. Using clickstream logs
+  from a municipal benefits portal, we locate the steps where applicants abandon their
+  forms. Little is known about why abandonment concentrates on identity checks; we find
+  that applicants struggle to upload documents from phones, a barrier to access for
+  residents without a computer.</summary>
+    <category term="cs.CY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2006-01-02T00:00:00Z</published>
+    <arxiv:primary_category term="cs.CY"/>
+    <author><name>G. Researcher</name></author>
+  </entry>
+  <!-- Dropped: primary category is cs.LG, even though cross-listed to cs.HC. -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.07771v1</id>
+    <title>Federated Learning for Hospital Readmission Prediction</title>
+    <updated>2026-10-08T10:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.07771v1" rel="alternate" type="text/html"/>
+    <summary>Hospitals cannot share patient records, which limits the data available to
+  readmission models. We propose a federated optimiser with adaptive client weighting and
+  prove it converges under non-IID data. Existing methods struggle with heterogeneous
+  clients; ours improves AUROC by 3 points across five simulated hospital networks while
+  keeping communication costs comparable to the strongest federated baselines.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.HC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-08T10:00:00Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author><name>I. Researcher</name></author>
+  </entry>
+  <!-- Dropped: title is a model name. -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.07772v1</id>
+    <title>TriageNet: Attention-Based Prioritisation of Emergency Calls</title>
+    <updated>2026-10-08T09:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.07772v1" rel="alternate" type="text/html"/>
+    <summary>Emergency response centres receive more calls than dispatchers can handle during
+  disasters. Manual triage is time-consuming and error-prone. We introduce TriageNet, a
+  hierarchical attention architecture over call transcripts, and show it outperforms
+  transformer baselines on a dataset of 20,000 annotated calls from two regional centres,
+  with the largest gains on calls that mention multiple casualties.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-08T09:00:00Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author><name>J. Researcher</name></author>
+  </entry>
+  <!-- Dropped: theory title. -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.07773v1</id>
+    <title>On the Fairness of Allocating Tutors to Students</title>
+    <updated>2026-10-08T08:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.07773v1" rel="alternate" type="text/html"/>
+    <summary>Schools often lack enough tutors for every student who needs one. We model tutor
+  allocation as a matching problem and characterise when envy-free allocations exist. We
+  give a polynomial algorithm for the two-subject case, show the general case is NP-hard,
+  and leave approximation guarantees for more than three subjects as an open problem for
+  future theoretical work on matching under capacity constraints.</summary>
+    <category term="cs.CY" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.GT" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-08T08:00:00Z</published>
+    <arxiv:primary_category term="cs.CY"/>
+    <author><name>K. Researcher</name></author>
+  </entry>
+  <!-- Dropped: names a domain (teachers) but no problem phrase. -->
+  <entry>
+    <id>http://arxiv.org/abs/2610.07774v1</id>
+    <title>A Dataset of Annotated Lesson Plans from Secondary Schools</title>
+    <updated>2026-10-08T07:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2610.07774v1" rel="alternate" type="text/html"/>
+    <summary>We release 12,000 lesson plans written by secondary-school teachers in four
+  countries, annotated with learning objectives, activities, and assessment types. We
+  describe the collection and annotation process, report inter-annotator agreement, and
+  provide baseline classifiers for objective tagging. The dataset and annotation guidelines
+  are available under an open licence for teachers and researchers to reuse.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-08T07:00:00Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author><name>L. Researcher</name></author>
+  </entry>
+  <!-- Older than SINCE: paging stops here, never evaluated. -->
+  <entry>
+    <id>http://arxiv.org/abs/2609.09999v1</id>
+    <title>Annotation Tools for Wildlife Camera Traps Remain Error-Prone</title>
+    <updated>2026-10-01T08:00:00Z</updated>
+    <link href="https://arxiv.org/abs/2609.09999v1" rel="alternate" type="text/html"/>
+    <summary>Conservation groups label millions of camera-trap images by hand. This process is
+  time-consuming and error-prone, and existing tools fail to support the review workflows
+  that volunteers actually use. We study three projects and propose a triage interface that
+  surfaces likely-empty frames first and lets experts audit volunteer labels in bulk.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-10-01T08:00:00Z</published>
+    <arxiv:primary_category term="cs.CV"/>
+    <author><name>H. Researcher</name></author>
+  </entry>
+</feed>
