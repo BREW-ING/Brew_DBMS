@@ -60,6 +60,26 @@ CREATE TABLE user_interests (
 );
 CREATE INDEX idx_user_interests_interest ON user_interests (interest_id);
 
+-- Past collaborations — the source of truth for Neo4j's COLLABORATED_WITH
+-- edges. Collaboration is symmetric, so each pair is stored exactly once in
+-- canonical order (user_a < user_b): storing both directions would let the
+-- two copies disagree. Insert with LEAST()/GREATEST() to normalize:
+--   INSERT INTO collaborations (user_a, user_b, project_name)
+--   VALUES (LEAST($1, $2)::uuid, GREATEST($1, $2)::uuid, $3);
+-- The strict < also rules out self-collaboration (user_a = user_b).
+CREATE TABLE collaborations (
+    user_a          UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_b          UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    project_name    TEXT NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_a, user_b),
+    CONSTRAINT collaborations_canonical_pair CHECK (user_a < user_b)
+);
+-- The PK serves lookups by user_a; this serves lookups by user_b. "All
+-- collaborators of X" is (user_a = X OR user_b = X), answered by combining
+-- both indexes. Also keeps the ON DELETE CASCADE on user_b from scanning.
+CREATE INDEX idx_collaborations_user_b ON collaborations (user_b);
+
 -- UNIQUE (user_id): exactly one constraints row per user. The feasibility
 -- scorer reads "the" user's team size and time budget; several rows per user
 -- would make that ambiguous.
@@ -333,15 +353,16 @@ CREATE TRIGGER trg_sweep_stale_signals
 --   1. SELECT ... WHERE processed_at IS NULL ORDER BY id
 --      FOR UPDATE SKIP LOCKED LIMIT n
 --   2. For each distinct entity_id (always a users.id), re-read that user's
---      current name, skills, and interests from Postgres. If the user no
---      longer exists, DETACH DELETE the (:User) node; otherwise MERGE the
---      node and replace its HAS_SKILL / INTERESTED_IN edges.
+--      current name, skills, interests, and collaborations from Postgres.
+--      If the user no longer exists, DETACH DELETE the (:User) node;
+--      otherwise MERGE the node and replace its HAS_SKILL, INTERESTED_IN,
+--      and COLLABORATED_WITH edges.
 --   3. SET processed_at = now() on the batch.
 -- Because step 2 copies current state rather than replaying deltas, events
 -- can be processed late, twice, or collapsed per user without drift.
 CREATE TABLE graph_sync_queue (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    entity_type     TEXT NOT NULL CHECK (entity_type IN ('user', 'user_skill', 'user_interest')),
+    entity_type     TEXT NOT NULL CHECK (entity_type IN ('user', 'user_skill', 'user_interest', 'collaboration')),
     -- The affected users.id. Deliberately not a foreign key: DELETE events
     -- must survive the user row being deleted.
     entity_id       UUID NOT NULL,
@@ -382,6 +403,26 @@ BEGIN
 END;
 $$;
 
+-- For collaborations: a pair touches two users, so enqueue both. On UPDATE
+-- that changes the pair, the old and new users are all enqueued; duplicates
+-- are harmless because the consumer collapses events per user.
+CREATE OR REPLACE FUNCTION enqueue_collaboration_graph_sync() RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF TG_OP IN ('UPDATE', 'DELETE') THEN
+        INSERT INTO graph_sync_queue (entity_type, entity_id, op)
+        VALUES ('collaboration', OLD.user_a, TG_OP), ('collaboration', OLD.user_b, TG_OP);
+    END IF;
+    IF TG_OP = 'INSERT'
+       OR (TG_OP = 'UPDATE' AND (NEW.user_a, NEW.user_b) IS DISTINCT FROM (OLD.user_a, OLD.user_b)) THEN
+        INSERT INTO graph_sync_queue (entity_type, entity_id, op)
+        VALUES ('collaboration', NEW.user_a, TG_OP), ('collaboration', NEW.user_b, TG_OP);
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
 CREATE TRIGGER trg_users_graph_sync
     AFTER INSERT OR DELETE ON users
     FOR EACH ROW
@@ -404,6 +445,13 @@ CREATE TRIGGER trg_user_interests_graph_sync
     AFTER INSERT OR UPDATE OR DELETE ON user_interests
     FOR EACH ROW
     EXECUTE FUNCTION enqueue_user_link_graph_sync('user_interest');
+
+-- Fires on any change, including a project_name-only UPDATE, because the
+-- graph edge carries project_name too.
+CREATE TRIGGER trg_collaborations_graph_sync
+    AFTER INSERT OR UPDATE OR DELETE ON collaborations
+    FOR EACH ROW
+    EXECUTE FUNCTION enqueue_collaboration_graph_sync();
 
 -- ---------------------------------------------------------
 -- 8. Materialized view — trending problem areas

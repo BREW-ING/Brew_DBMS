@@ -16,7 +16,8 @@
 //         (2-hop: someone the user has worked with has worked with them)
 //   +1.0  if the user and candidate have collaborated directly
 //
-// COLLABORATED_WITH is stored with a direction but treated as undirected.
+// COLLABORATED_WITH is stored once per pair (lower id -> higher id, mirroring
+// Postgres collaborations) and matched here as undirected.
 
 MATCH (me:User {id: $userId})
 MATCH (other:User)
@@ -28,8 +29,9 @@ WITH me, other,
          AS overlappingSkills,
      [(me)-[:INTERESTED_IN]->(i:Interest)<-[:INTERESTED_IN]-(other) | i.name]
          AS sharedInterests,
-     // One entry per 2-hop path; deduplicated below because two people can
-     // be linked by more than one COLLABORATED_WITH edge (one per project).
+     // One entry per 2-hop path. With one edge per pair each intermediary
+     // appears once, but dedupe anyway so stray duplicate edges in the
+     // graph can't inflate the score.
      [(me)-[:COLLABORATED_WITH]-(mid:User)-[:COLLABORATED_WITH]-(other) | mid]
          AS viaPaths,
      EXISTS { (me)-[:COLLABORATED_WITH]-(other) }

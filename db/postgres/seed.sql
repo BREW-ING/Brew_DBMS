@@ -1,7 +1,8 @@
 -- =========================================================
 -- Brew — demo seed data (run after schema.sql)
 -- =========================================================
--- 10 users with skills, interests, and constraints; 3 ingestion sources;
+-- 10 users with skills, interests, constraints, and 7 past collaborations;
+-- 3 ingestion sources;
 -- 31 synthetic problem signals with signal_skills rows. Signals have no
 -- embeddings — run the embedding job to fill them in.
 --
@@ -12,7 +13,7 @@
 -- Seed users cannot log in: password_hash holds a locked placeholder that no
 -- password hashes to. Register a real account to use the app.
 --
--- The user/skill/interest inserts fire the graph-sync triggers, so
+-- The user/skill/interest/collaboration inserts fire the graph-sync triggers, so
 -- graph_sync_queue will hold pending events afterwards.
 -- db/neo4j/constraints_and_seed.cypher creates the same graph directly;
 -- running the sync worker as well is harmless (it is idempotent).
@@ -124,6 +125,23 @@ FROM (VALUES
     ('00000000-0000-4000-8000-000000000010'::uuid, 'security')
 ) AS v(user_id, interest)
 JOIN interests i ON i.name = v.interest
+ON CONFLICT DO NOTHING;
+
+-- ---------------------------------------------------------
+-- Past collaborations (same pairs as the Neo4j seed). LEAST/GREATEST put
+-- each pair in canonical order (user_a < user_b).
+-- ---------------------------------------------------------
+INSERT INTO collaborations (user_a, user_b, project_name)
+SELECT LEAST(v.a, v.b), GREATEST(v.a, v.b), v.project_name
+FROM (VALUES
+    ('00000000-0000-4000-8000-000000000001'::uuid, '00000000-0000-4000-8000-000000000007'::uuid, 'clinic-faq-bot'),
+    ('00000000-0000-4000-8000-000000000007'::uuid, '00000000-0000-4000-8000-000000000009'::uuid, 'paper-graph-explorer'),
+    ('00000000-0000-4000-8000-000000000002'::uuid, '00000000-0000-4000-8000-000000000006'::uuid, 'bike-lane-tracker'),
+    ('00000000-0000-4000-8000-000000000006'::uuid, '00000000-0000-4000-8000-000000000003'::uuid, 'canopy-cover-map'),
+    ('00000000-0000-4000-8000-000000000003'::uuid, '00000000-0000-4000-8000-000000000010'::uuid, 'river-sensor-net'),
+    ('00000000-0000-4000-8000-000000000004'::uuid, '00000000-0000-4000-8000-000000000010'::uuid, 'edge-log-agent'),
+    ('00000000-0000-4000-8000-000000000005'::uuid, '00000000-0000-4000-8000-000000000008'::uuid, 'accessible-budget-app')
+) AS v(a, b, project_name)
 ON CONFLICT DO NOTHING;
 
 -- ---------------------------------------------------------

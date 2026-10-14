@@ -3,15 +3,16 @@
 // =========================================================
 // Run against a fresh Neo4j AuraDB instance (Neo4j 5).
 //
-// Postgres is the source of truth for users, skills, and interests; this
-// graph mirrors them (kept current by the graph_sync_queue worker — see
-// db/postgres/schema.sql section 7). COLLABORATED_WITH edges currently live
-// only here: Postgres has no collaborations table yet.
+// Postgres is the source of truth for users, skills, interests, and
+// collaborations; this graph mirrors them (kept current by the
+// graph_sync_queue worker — see db/postgres/schema.sql section 7).
 //
 // Graph model:
 //   (:User {id, name})-[:HAS_SKILL {proficiency}]->(:Skill {name})
 //   (:User)-[:INTERESTED_IN]->(:Interest {name})
-//   (:User)-[:COLLABORATED_WITH {project}]->(:User)   // treat as undirected
+//   (:User)-[:COLLABORATED_WITH {project_name}]->(:User)
+//     One edge per pair, directed from the lower users.id to the higher one
+//     (mirrors collaborations.user_a < user_b). Query it as undirected.
 //
 // The teammate query lives in db/neo4j/queries/teammates.cypher.
 
@@ -137,19 +138,21 @@ MATCH (u:User {id: row[0]}), (i:Interest {name: row[1]})
 MERGE (u)-[:INTERESTED_IN]->(i);
 
 // ---------------------------------------------------------
-// 4. Past collaborations (graph-only for now)
+// 4. Past collaborations — same pairs as the collaborations table
 // ---------------------------------------------------------
 // Chosen so the 2-hop part of the teammate query has something to find,
 // e.g. Aisha -> Sofia -> Hana, and Mateo -> Kwame -> Priya -> Liam.
-// [userA, userB, project]
+// Pairs are listed in canonical order (userA < userB), matching Postgres.
+// [userA, userB, project_name]
 UNWIND [
   ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000007', 'clinic-faq-bot'],
   ['00000000-0000-4000-8000-000000000007', '00000000-0000-4000-8000-000000000009', 'paper-graph-explorer'],
   ['00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000006', 'bike-lane-tracker'],
-  ['00000000-0000-4000-8000-000000000006', '00000000-0000-4000-8000-000000000003', 'canopy-cover-map'],
+  ['00000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000006', 'canopy-cover-map'],
   ['00000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000010', 'river-sensor-net'],
   ['00000000-0000-4000-8000-000000000004', '00000000-0000-4000-8000-000000000010', 'edge-log-agent'],
   ['00000000-0000-4000-8000-000000000005', '00000000-0000-4000-8000-000000000008', 'accessible-budget-app']
 ] AS row
 MATCH (a:User {id: row[0]}), (b:User {id: row[1]})
-MERGE (a)-[:COLLABORATED_WITH {project: row[2]}]->(b);
+MERGE (a)-[r:COLLABORATED_WITH]->(b)
+SET r.project_name = row[2];
