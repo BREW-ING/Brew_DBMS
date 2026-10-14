@@ -4,14 +4,14 @@ Brew stores data in three ways:
 
 - **PostgreSQL**, the relational source of truth: users, skills, interests, signals, suggestions, and feedback.
 - **pgvector**, inside the same Postgres instance, for embeddings and nearest-neighbour search.
-- **Neo4j**, a read-optimized mirror of users, skills, and interests, plus collaboration history, used for teammate matching.
+- **Neo4j**, a read-optimized mirror of users, skills, interests, and collaboration history, used for teammate matching.
 
 Source files:
 
 | File | Contents |
 |---|---|
 | [`db/postgres/schema.sql`](../db/postgres/schema.sql) | Tables, indexes, functions, triggers, materialized view, reference data |
-| [`db/postgres/seed.sql`](../db/postgres/seed.sql) | Demo data: 10 users, 31 signals |
+| [`db/postgres/seed.sql`](../db/postgres/seed.sql) | Demo data: 10 users, 7 collaborations, 31 signals |
 | [`db/neo4j/constraints_and_seed.cypher`](../db/neo4j/constraints_and_seed.cypher) | Graph constraints and matching demo data |
 | [`db/neo4j/queries/teammates.cypher`](../db/neo4j/queries/teammates.cypher) | Teammate recommendation query |
 
@@ -23,6 +23,8 @@ erDiagram
     skills ||--o{ user_skills : "held by"
     users ||--o{ user_interests : has
     interests ||--o{ user_interests : "held by"
+    users ||--o{ collaborations : "user_a"
+    users ||--o{ collaborations : "user_b"
     users ||--o| constraints : sets
     users |o--o{ ingestion_sources : "created by"
     problem_signals ||--o{ signal_skills : requires
@@ -57,6 +59,12 @@ erDiagram
     user_interests {
         UUID user_id PK, FK
         INT interest_id PK, FK
+    }
+    collaborations {
+        UUID user_a PK, FK "user_a < user_b"
+        UUID user_b PK, FK
+        TEXT project_name
+        TIMESTAMPTZ created_at
     }
     constraints {
         UUID id PK
@@ -133,6 +141,7 @@ erDiagram
   - Both are seeded in `schema.sql` because the app needs them in every environment.
 - **`user_skills`**: many-to-many link between users and skills, with `proficiency` from 1 to 5.
 - **`user_interests`**: many-to-many link between users and interests. Postgres is the source of truth; Neo4j mirrors it.
+- **`collaborations`**: past projects two users worked on together. Each pair is stored once, in canonical order (see [section 8](#8-collaborations)).
 - **`constraints`**: the user's planning limits, `team_size` and `timeframe_hours`. `UNIQUE (user_id)` allows exactly one row per user, because the scorer needs a single answer to "how big is this user's team?".
 
 ### Ingestion
@@ -177,6 +186,7 @@ Every column holds one value per row, except the two array columns:
 | `skills` / `interests` | `id`, `name` | `id ↔ name` | BCNF |
 | `user_skills` | `(user_id, skill_id)` | `(user_id, skill_id) → proficiency` | BCNF |
 | `user_interests` | `(user_id, interest_id)` | none (all-key) | BCNF |
+| `collaborations` | `(user_a, user_b)` | `(user_a, user_b) → project_name, created_at` | BCNF |
 | `constraints` | `id`, `user_id` | either key → the rest | BCNF |
 | `ingestion_sources` | `id` | `id → the rest` | BCNF |
 | `problem_signals` | `id`, `(source, external_id)` | either key → the rest | BCNF (see below) |
@@ -207,6 +217,8 @@ Every index, including those created implicitly by primary keys and unique const
 | `user_skills` | `idx_user_skills_skill (skill_id)` | B-tree | "Users with skill X"; stops `ON DELETE CASCADE` from `skills` scanning the table |
 | `user_interests` | PK `(user_id, interest_id)` | B-tree | "Interests of user X" |
 | `user_interests` | `idx_user_interests_interest (interest_id)` | B-tree | Reverse lookup; cascade from `interests` |
+| `collaborations` | PK `(user_a, user_b)` | B-tree | One row per pair; lookups by `user_a` |
+| `collaborations` | `idx_collaborations_user_b (user_b)` | B-tree | Lookups by `user_b`; cascade from `users`. With the PK, answers `user_a = X OR user_b = X` via a BitmapOr |
 | `constraints` | PK `id`, UNIQUE `user_id` | B-tree | One row per user; the scorer's lookup |
 | `problem_signals` | PK `id` | B-tree | `id = ANY($ids)` in `score_candidates`; FK target |
 | `problem_signals` | UNIQUE `(source, external_id)` | B-tree | Dedupe target for `INSERT ... ON CONFLICT` |
@@ -286,6 +298,7 @@ Marks signals stale once `COALESCE(published_at, fetched_at)` is more than 30 da
 | `trg_users_graph_sync_name` | `AFTER UPDATE OF name` on `users`, `WHEN` the name actually changed | Enqueues a `user` event. Password, email, role, and embedding updates are ignored because Neo4j doesn't store them. |
 | `trg_user_skills_graph_sync` | `AFTER INSERT/UPDATE/DELETE` on `user_skills` | Enqueues a `user_skill` event for the affected user, or both users if a row moved between users. |
 | `trg_user_interests_graph_sync` | `AFTER INSERT/UPDATE/DELETE` on `user_interests` | Same, with `user_interest`. |
+| `trg_collaborations_graph_sync` | `AFTER INSERT/UPDATE/DELETE` on `collaborations` | Enqueues a `collaboration` event for *both* users in the pair, including when only `project_name` changes, since the graph edge carries it. |
 
 Staleness only ever goes from not stale to stale. Nothing sets `is_stale` back to `false`, so a signal a curator retired by hand stays retired even if it is re-fetched.
 
@@ -299,27 +312,73 @@ Run this after each ingestion job. The view has no `ORDER BY`; sort when queryin
 
 ## 7. Graph sync outbox
 
-Neo4j mirrors users, skills, and interests from Postgres. Writing to both databases from the app would risk them drifting apart whenever one write succeeds and the other fails. Instead, triggers write an event to `graph_sync_queue` **in the same transaction** as the change. An event exists if and only if the change committed.
+Neo4j mirrors users, skills, interests, and collaborations from Postgres. Writing to both databases from the app would risk them drifting apart whenever one write succeeds and the other fails. Instead, triggers write an event to `graph_sync_queue` **in the same transaction** as the change. An event exists if and only if the change committed.
 
 A sync worker drains the queue:
 
 1. `SELECT … FROM graph_sync_queue WHERE processed_at IS NULL ORDER BY id FOR UPDATE SKIP LOCKED LIMIT n`. `SKIP LOCKED` lets several workers run safely, and the query uses `idx_graph_sync_queue_pending`.
-2. For each distinct `entity_id` (always a `users.id`), it re-reads that user's *current* name, skills, and interests from Postgres.
+2. For each distinct `entity_id` (always a `users.id`), it re-reads that user's *current* name, skills, interests, and collaborations from Postgres.
    - If the user no longer exists, it runs `DETACH DELETE` on the `(:User)` node.
-   - Otherwise it `MERGE`s the node and replaces its `HAS_SKILL` and `INTERESTED_IN` edges.
+   - Otherwise it `MERGE`s the node and replaces its `HAS_SKILL`, `INTERESTED_IN`, and `COLLABORATED_WITH` edges.
+   - A collaboration change enqueues both users, so the edge is reconciled from both ends.
 3. `UPDATE … SET processed_at = now()` for the batch.
 
 Because step 2 copies current state rather than replaying each change, it is **idempotent**. Events can arrive late, twice, or be collapsed per user without the graph drifting.
 
-`entity_id` has no foreign key so that delete events survive the user row being deleted. Deleting a user produces one `user` event plus one event for each cascaded skill or interest row, and the worker collapses them per user.
+`entity_id` has no foreign key so that delete events survive the user row being deleted. Deleting a user produces one `user` event, one event per cascaded skill or interest row, and two events per cascaded collaboration (one for each user). The worker collapses them per user.
 
 Limitations to be aware of:
 
 - `TRUNCATE` does not fire row triggers.
 - Renaming a skill or interest is not synced. Those vocabularies change rarely and are seeded identically in both stores.
-- `COLLABORATED_WITH` edges exist only in Neo4j, because Postgres has no collaborations table yet.
 
-## 8. Neo4j
+## 8. Collaborations
+
+`collaborations` records that two users worked on a project together. It is the source of truth for Neo4j's `COLLABORATED_WITH` edges, which the teammate query uses for direct and 2-hop scoring.
+
+```sql
+CREATE TABLE collaborations (
+    user_a       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_b       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    project_name TEXT NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_a, user_b),
+    CONSTRAINT collaborations_canonical_pair CHECK (user_a < user_b)
+);
+```
+
+**One row per pair.** Collaboration is symmetric: if A worked with B, then B worked with A. Storing both directions would duplicate every fact and allow the two copies to disagree, for example after one is deleted or renamed.
+
+- `CHECK (user_a < user_b)` forces a single canonical order, and the primary key then guarantees each pair appears once.
+- The strict `<` also rules out self-collaboration, since `user_a = user_b` fails the check.
+
+Callers normalize the order with `LEAST`/`GREATEST`:
+
+```sql
+INSERT INTO collaborations (user_a, user_b, project_name)
+VALUES (LEAST($1, $2)::uuid, GREATEST($1, $2)::uuid, $3)
+ON CONFLICT (user_a, user_b) DO UPDATE SET project_name = EXCLUDED.project_name;
+```
+
+**One project per pair.** The key is the pair, so a pair that works together again keeps a single row, and `project_name` holds the latest or most notable project.
+
+If the full project history is ever needed, extend the key to `(user_a, user_b, project_name)`. The 2-hop query already deduplicates intermediaries, so multiple edges per pair wouldn't inflate scores.
+
+**Querying.** "Collaborators of X" must check both columns:
+
+```sql
+SELECT CASE WHEN user_a = $1 THEN user_b ELSE user_a END AS collaborator, project_name
+FROM collaborations
+WHERE user_a = $1 OR user_b = $1;
+```
+
+The primary key covers `user_a`, and `idx_collaborations_user_b` covers `user_b`. Postgres combines the two with a BitmapOr, so neither side needs a scan.
+
+**Sync.** `trg_collaborations_graph_sync` enqueues both users on every insert, update, or delete. In Neo4j the edge is stored once, directed from `user_a` to `user_b` with a `project_name` property, and queried as undirected (`-[:COLLABORATED_WITH]-`).
+
+**Normalization.** The only FD is `(user_a, user_b) → project_name, created_at`, and the determinant is the key, so the table is in BCNF. The canonical-order check removes the redundancy that a symmetric relation would otherwise introduce.
+
+## 9. Neo4j
 
 **Constraints.** There are uniqueness constraints on `User.id`, `Skill.name`, and `Interest.name`. Each is backed by an index, so there is no separate index on `User.id`.
 
@@ -337,7 +396,7 @@ Shared interests used to be required for someone to appear at all. Now they only
 
 The query returns the reasons alongside the score (`complementarySkills`, `sharedInterests`, `mutualCollaborators`) so the UI can explain each recommendation. For example, with the seed data, Hana appears for Aisha via their mutual collaborator Sofia.
 
-## 9. Loading the schema and seed data
+## 10. Loading the schema and seed data
 
 ```bash
 psql "$DATABASE_URL" -f db/postgres/schema.sql
