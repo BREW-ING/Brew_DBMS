@@ -282,7 +282,7 @@ A one-line wrapper around `score_candidates` for ad-hoc queries and readability.
 
 ### `expire_stale_signals() → INTEGER`
 
-Marks signals stale once `COALESCE(published_at, fetched_at)` is more than 30 days old and returns the number of rows changed.
+Marks signals stale once `COALESCE(published_at, fetched_at)` is more than 180 days old and returns the number of rows changed. The window was 30 days in the initial schema. Migration `202611021200_staleness_window_180_days.sql` widened it, because sources are backfilled far beyond 30 days (HN goes back 365).
 
 - It uses `published_at` because a year-old paper that was fetched today is not fresh.
 - Its `WHERE` clause matches the partial index exactly, so it reads only not-yet-stale rows past the cutoff and never rewrites rows that are already stale.
@@ -300,7 +300,7 @@ Marks signals stale once `COALESCE(published_at, fetched_at)` is more than 30 da
 | `trg_user_interests_graph_sync` | `AFTER INSERT/UPDATE/DELETE` on `user_interests` | Same, with `user_interest`. |
 | `trg_collaborations_graph_sync` | `AFTER INSERT/UPDATE/DELETE` on `collaborations` | Enqueues a `collaboration` event for *both* users in the pair, including when only `project_name` changes, since the graph edge carries it. |
 
-Staleness only ever goes from not stale to stale. Nothing sets `is_stale` back to `false`, so a signal a curator retired by hand stays retired even if it is re-fetched.
+Staleness only ever goes from not stale to stale. Nothing sets `is_stale` back to `false`, so a signal a curator retired by hand stays retired even if it is re-fetched. The one exception was the 180-day migration. It un-staled rows aged 30–180 days, the ones the old 30-day rule had marked, and left stale rows younger than 30 days alone, since only a curator could have retired those.
 
 **`trending_problem_areas`** (materialized view) counts non-stale signals per topic tag fetched in the last 14 days, along with the most recent fetch time. It has a unique index on `category`, so it can be refreshed without blocking readers:
 

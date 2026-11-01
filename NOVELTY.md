@@ -54,7 +54,7 @@ A few smaller design choices back this up:
 
 - `problem_signals.embedded` is a **generated column** (`embedding IS NOT NULL`), so it can never disagree with the data it describes
 - each collaboration is stored **once**, with `user_a < user_b`, so the same pair can't appear twice in different orders
-- **stale signals** (older than 30 days) are marked by triggers and a partial index, not by a separate cleanup job
+- **stale signals** (older than 180 days) are marked by triggers and a partial index, not by a separate cleanup job
 - the trending view is a **materialized view** with a unique index, so it can be refreshed while people are reading it
 
 ## How Brew compares
