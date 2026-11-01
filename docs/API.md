@@ -1,11 +1,29 @@
 # Brew — API Reference
 
-All routes below live under `apps/web/app/api/`. All routes except `auth` require a signed-in session (NextAuth). Curator-only routes are marked.
+All routes below live under `apps/web/app/api/`. All routes except `auth` require a signed-in session (Auth.js / NextAuth v5). Curator-only routes are marked.
 
 ## Auth
 
-### `POST /api/auth/[...nextauth]`
-Handled entirely by NextAuth.js. Roles: `user` (default), `curator`.
+### `GET|POST /api/auth/[...nextauth]`
+Handled entirely by Auth.js (`apps/web/lib/auth.ts`) with the Credentials provider: email + password checked against `users.password_hash` (bcrypt). Sessions are JWTs signed with `AUTH_SECRET`; the token carries only the user's `id` and `role` (plus name and email). `password_hash` is never selected into the session or sent to the client.
+
+Sign-up and sign-in are server actions behind the `/register` and `/login` pages, not separate API routes. New accounts always get `role = 'user'`.
+
+`apps/web/proxy.ts` (Next 16's replacement for `middleware.ts`) gates every route except `/login`, `/register`, and `/api/auth/*`:
+- No session: pages redirect to `/login?callbackUrl=…`; API routes return `401`.
+- `/review`, `/sources` (the `(curator)` pages) and `/api/curator/*` need `role = 'curator'`: pages redirect to `/`; API routes return `403`.
+
+### Promoting a user to curator
+There is no UI for this. Run in the Supabase SQL editor (emails are stored lowercase):
+
+```sql
+UPDATE users
+SET role = 'curator'
+WHERE email = lower('someone@example.com')
+RETURNING id, email, role;
+```
+
+The role is copied into the JWT at sign-in, so the user must sign out and back in before curator routes open. Demoting (`SET role = 'user'`) likewise only takes effect on their next sign-in.
 
 ---
 

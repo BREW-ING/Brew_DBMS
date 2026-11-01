@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coffee, Lightbulb, TrendingUp, User, Users } from "lucide-react";
+import { ClipboardCheck, Coffee, Database, Lightbulb, LogOut, TrendingUp, User, Users } from "lucide-react";
 
+import { logout } from "@/app/(auth)/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import type { Role } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -14,13 +17,19 @@ const links = [
   { href: "/profile", label: "Profile", icon: User },
 ] as const;
 
+const curatorLinks = [
+  { href: "/review", label: "Review", icon: ClipboardCheck },
+  { href: "/sources", label: "Sources", icon: Database },
+] as const;
+
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/" || pathname.startsWith("/suggestions");
   return pathname.startsWith(href);
 }
 
-export function NavBar() {
+export function NavBar({ user }: { user: { name: string; role: Role } | null }) {
   const pathname = usePathname();
+  const visibleLinks = user ? [...links, ...(user.role === "curator" ? curatorLinks : [])] : [];
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
@@ -30,7 +39,7 @@ export function NavBar() {
           Brew
         </Link>
         <nav aria-label="Main" className="flex flex-1 items-center gap-1 overflow-x-auto">
-          {links.map(({ href, label, icon: Icon }) => {
+          {visibleLinks.map(({ href, label, icon: Icon }) => {
             const active = isActive(pathname, href);
             return (
               <Link
@@ -49,6 +58,14 @@ export function NavBar() {
           })}
         </nav>
         <ThemeToggle />
+        {user ? (
+          <form action={logout}>
+            <Button type="submit" variant="ghost" size="sm" aria-label={`Sign out ${user.name}`}>
+              <LogOut aria-hidden />
+              <span className="sr-only sm:not-sr-only">Sign out</span>
+            </Button>
+          </form>
+        ) : null}
       </div>
     </header>
   );
