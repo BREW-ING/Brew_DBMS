@@ -5,18 +5,36 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { TrendingChart } from "@/components/trending-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getTrendingTopics } from "@/lib/mock-data";
+import { getTrending } from "@/lib/trending";
 
 export const metadata: Metadata = { title: "Trending" };
 
 const TOP_N = 8;
 
+function timeAgo(date: Date): string {
+  const minutes = Math.round((Date.now() - date.getTime()) / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  return `${Math.round(hours / 24)} days ago`;
+}
+
 export default async function TrendingPage() {
-  const topics = (await getTrendingTopics()).slice(0, TOP_N);
+  const { topics, refreshedAt } = await getTrending(TOP_N);
 
   return (
     <>
-      <PageHeader title="Trending" description="Problem areas with the most new signals in the last 14 days." />
+      <PageHeader title="Trending" description="Problem areas with the most new signals in the last 14 days.">
+        {refreshedAt ? (
+          <p className="text-xs text-muted-foreground">
+            Last refreshed{" "}
+            <time dateTime={refreshedAt.toISOString()} title={refreshedAt.toUTCString()}>
+              {timeAgo(refreshedAt)}
+            </time>
+          </p>
+        ) : null}
+      </PageHeader>
 
       {topics.length > 0 ? (
         <Card>

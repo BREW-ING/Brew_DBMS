@@ -24,6 +24,8 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.89 0 0);
   --ring: oklch(0.55 0.17 255);
+  /* Second chart series (orange), for charts that compare two measures. */
+  --chart-2: #eb6834;
 }
 
 .dark {
@@ -45,6 +47,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.7 0.14 255);
+  --chart-2: #d95926;
 }
 
 @theme inline {

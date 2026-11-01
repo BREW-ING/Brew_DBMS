@@ -302,7 +302,7 @@ Marks signals stale once `COALESCE(published_at, fetched_at)` is more than 180 d
 
 Staleness only ever goes from not stale to stale. Nothing sets `is_stale` back to `false`, so a signal a curator retired by hand stays retired even if it is re-fetched. The one exception was the 180-day migration. It un-staled rows aged 30–180 days, the ones the old 30-day rule had marked, and left stale rows younger than 30 days alone, since only a curator could have retired those.
 
-**`trending_problem_areas`** (materialized view) counts non-stale signals per topic tag fetched in the last 14 days, along with the most recent fetch time. It has a unique index on `category`, so it can be refreshed without blocking readers:
+**`trending_problem_areas`** (materialized view) counts non-stale signals per topic tag fetched in the last 14 days, along with the most recent fetch time. Its `refreshed_at` column is `now()` at the last refresh (the same on every row), which the trending page shows as "last refreshed". It has a unique index on `category`, so it can be refreshed without blocking readers:
 
 ```sql
 REFRESH MATERIALIZED VIEW CONCURRENTLY trending_problem_areas;

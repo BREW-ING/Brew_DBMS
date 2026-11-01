@@ -458,9 +458,12 @@ CREATE TRIGGER trg_collaborations_graph_sync
 -- ---------------------------------------------------------
 CREATE MATERIALIZED VIEW trending_problem_areas AS
 SELECT
-    tag              AS category,
-    COUNT(*)         AS signal_count,
-    MAX(ps.fetched_at) AS most_recent
+    tag                AS category,
+    COUNT(*)           AS signal_count,
+    MAX(ps.fetched_at) AS most_recent,
+    -- Evaluated on every REFRESH, so it records when the view was last
+    -- refreshed (Postgres doesn't track that). Same value on every row.
+    now()              AS refreshed_at
 FROM problem_signals ps
 CROSS JOIN LATERAL unnest(ps.category_tags) AS tag
 WHERE ps.fetched_at > now() - INTERVAL '14 days'

@@ -3,7 +3,7 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts";
 
-import type { TrendingTopic } from "@/lib/mock-data";
+import type { TrendingTopic } from "@/lib/trending";
 
 const BAR_SIZE = 18;
 const ROW_HEIGHT = 36;

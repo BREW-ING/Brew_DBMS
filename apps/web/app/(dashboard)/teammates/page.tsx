@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { redirect } from "next/navigation";
+import { Unplug, Users } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { TeammateCard } from "@/components/teammate-card";
 import { Button } from "@/components/ui/button";
-import { getTeammates } from "@/lib/mock-data";
+import { auth } from "@/lib/auth";
+import { getTeammatesForUser } from "@/lib/teammates";
 
 export const metadata: Metadata = { title: "Teammates" };
 
 export default async function TeammatesPage() {
-  const teammates = await getTeammates();
+  const session = await auth();
+  if (!session) redirect("/login");
+
+  const result = await getTeammatesForUser(session.user.id);
 
   return (
     <>
@@ -20,10 +25,16 @@ export default async function TeammatesPage() {
         description="People whose skills complement yours, found through shared interests and past collaborations."
       />
 
-      {teammates.length > 0 ? (
+      {result.status === "graph_unavailable" ? (
+        <EmptyState
+          icon={Unplug}
+          title="Teammate matching is offline"
+          description="We can't reach the collaboration graph right now. Your suggestions still work — try this page again in a few minutes."
+        />
+      ) : result.teammates.length > 0 ? (
         <ul className="grid gap-4 sm:grid-cols-2">
-          {teammates.map((teammate) => (
-            <li key={teammate.id}>
+          {result.teammates.map((teammate) => (
+            <li key={teammate.userId}>
               <TeammateCard teammate={teammate} />
             </li>
           ))}

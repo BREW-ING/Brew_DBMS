@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, Coffee, Database, Lightbulb, LogOut, TrendingUp, User, Users } from "lucide-react";
+import {
+  ClipboardCheck,
+  Coffee,
+  Database,
+  FileChartColumn,
+  Lightbulb,
+  LogOut,
+  TrendingUp,
+  User,
+  Users,
+} from "lucide-react";
 
 import { logout } from "@/app/(auth)/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,6 +24,7 @@ const links = [
   { href: "/", label: "Suggestions", icon: Lightbulb },
   { href: "/trending", label: "Trending", icon: TrendingUp },
   { href: "/teammates", label: "Teammates", icon: Users },
+  { href: "/reports", label: "Reports", icon: FileChartColumn },
   { href: "/profile", label: "Profile", icon: User },
 ] as const;
 
