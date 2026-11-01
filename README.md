@@ -101,5 +101,5 @@ GitHub doesn't allow secret names that start with `GITHUB_`. The GitHub token is
 
 ## Authors
 
-- **Author Name**: [@github-handle](https://github.com/github-handle)
-- **Author Name**: [@github-handle](https://github.com/github-handle)
+- **Pranav Kalla**: [@PRANAVKALLA230106](https://github.com/PRANAVKALLA230106)
+- **Pavitra Jain**: [@pavitragit09](https://github.com/pavitragit09)
