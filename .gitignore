@@ -21,6 +21,8 @@ env/
 
 # Build and IDE
 .next/
+next-env.d.ts
+*.tsbuildinfo
 out/
 build/
 dist/
