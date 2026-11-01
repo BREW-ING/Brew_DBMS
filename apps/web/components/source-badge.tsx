@@ -1,6 +1,6 @@
 import { CircleDot, FileText, MessageSquare, type LucideIcon } from "lucide-react";
 
-import type { SignalSource } from "@/lib/mock-data";
+import type { SignalSource } from "@/lib/suggestions";
 import { cn } from "@/lib/utils";
 
 const sources: Record<SignalSource, { label: string; icon: LucideIcon }> = {

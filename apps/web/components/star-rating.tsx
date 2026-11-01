@@ -7,17 +7,48 @@ import { cn } from "@/lib/utils";
 
 const labels = ["Not useful", "Meh", "Okay", "Good", "Great idea"] as const;
 
-/** 1-5 star feedback (feedback.rating). Local state only until /api/feedback is wired up. */
-export function StarRating({ suggestionTitle }: { suggestionTitle: string }) {
-  const [rating, setRating] = useState<number | null>(null);
+/** 1-5 star feedback (feedback.rating), saved through POST /api/feedback. */
+export function StarRating({
+  suggestionId,
+  suggestionTitle,
+  initialRating,
+}: {
+  suggestionId: string;
+  suggestionTitle: string;
+  initialRating: number | null;
+}) {
+  const [rating, setRating] = useState<number | null>(initialRating);
   const [hovered, setHovered] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const shown = hovered ?? rating ?? 0;
+
+  async function rate(value: number) {
+    const previous = rating;
+    setRating(value);
+    setError(null);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ suggestionId, rating: value }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch {
+      setRating(previous);
+      setError("Couldn't save your rating. Try again in a moment.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-2">
       <div
         role="group"
         aria-label={`Rate "${suggestionTitle}"`}
+        aria-busy={saving}
         className="flex items-center gap-1"
         onMouseLeave={() => setHovered(null)}
       >
@@ -29,9 +60,10 @@ export function StarRating({ suggestionTitle }: { suggestionTitle: string }) {
               type="button"
               aria-label={`${value} star${value > 1 ? "s" : ""}: ${label}`}
               aria-pressed={rating === value}
-              onClick={() => setRating(value)}
+              disabled={saving}
+              onClick={() => rate(value)}
               onMouseEnter={() => setHovered(value)}
-              className="rounded-md p-1.5 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              className="rounded-md p-1.5 outline-none transition-colors hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-70"
             >
               <Star
                 className={cn(
@@ -44,8 +76,12 @@ export function StarRating({ suggestionTitle }: { suggestionTitle: string }) {
           );
         })}
       </div>
-      <p className="h-5 text-sm text-muted-foreground" aria-live="polite">
-        {rating ? `Thanks! You rated this ${rating}/5 (${labels[rating - 1]}).` : "How useful is this suggestion?"}
+      <p
+        className={cn("h-5 text-sm", error ? "text-destructive" : "text-muted-foreground")}
+        aria-live="polite"
+      >
+        {error ??
+          (rating ? `Thanks! You rated this ${rating}/5 (${labels[rating - 1]}).` : "How useful is this suggestion?")}
       </p>
     </div>
   );

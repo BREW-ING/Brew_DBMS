@@ -1,14 +1,16 @@
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 import { ScoreBar } from "@/components/score-bar";
 import { SourceBadge } from "@/components/source-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Suggestion } from "@/lib/mock-data";
+import type { Suggestion } from "@/lib/suggestions";
 import { formatAge } from "@/lib/utils";
 
 export function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
+  const topic = suggestion.topicTags[0];
   return (
     <Card className="relative transition-colors hover:border-foreground/20 focus-within:ring-[3px] focus-within:ring-ring/50">
       <CardHeader>
@@ -20,9 +22,11 @@ export function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
           <time className="text-xs" dateTime={suggestion.publishedAt}>
             {formatAge(suggestion.publishedAt)}
           </time>
-          <Badge variant="secondary" className="ml-auto">
-            {suggestion.topic}
-          </Badge>
+          {topic ? (
+            <Badge variant="secondary" className="ml-auto">
+              {topic}
+            </Badge>
+          ) : null}
         </div>
         <CardTitle className="text-base">
           {/* Stretched link: the whole card is clickable, only the title is announced. */}
@@ -33,10 +37,21 @@ export function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
             {suggestion.title}
           </Link>
         </CardTitle>
-        <p className="text-sm text-muted-foreground">{suggestion.idea}</p>
+        {suggestion.requiredSkills.length > 0 ? (
+          <ul className="flex flex-wrap gap-1.5" aria-label="Required skills">
+            {suggestion.requiredSkills.map((skill) => (
+              <li key={skill.name}>
+                <Badge variant={skill.userHas ? "accent" : "outline"}>
+                  {skill.userHas ? <Check aria-label="You have this skill" /> : null}
+                  {skill.name}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-2 sm:gap-6">
-        <ScoreBar label="Relevance" value={suggestion.relevance} />
+        <ScoreBar label="Relevance" value={suggestion.similarity} />
         <ScoreBar label="Feasibility" value={suggestion.feasibility} />
       </CardContent>
     </Card>

@@ -1,15 +1,23 @@
 import Link from "next/link";
-import { Inbox } from "lucide-react";
+import { redirect } from "next/navigation";
+import { Inbox, UserPen } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { SuggestionCard } from "@/components/suggestion-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getProfile, getSuggestions } from "@/lib/mock-data";
+import { auth } from "@/lib/auth";
+import { getProfile } from "@/lib/profile";
+import { getSuggestionsForUser } from "@/lib/suggestions";
 
 export default async function SuggestionsPage() {
-  const [profile, suggestions] = await Promise.all([getProfile(), getSuggestions()]);
+  const session = await auth();
+  if (!session) redirect("/login");
+  const userId = session.user.id;
+
+  const [profile, result] = await Promise.all([getProfile(userId), getSuggestionsForUser(userId)]);
+  if (!profile) redirect("/login");
 
   return (
     <>
@@ -26,9 +34,19 @@ export default async function SuggestionsPage() {
         </div>
       </PageHeader>
 
-      {suggestions.length > 0 ? (
+      {result.status === "profile_incomplete" ? (
+        <EmptyState
+          icon={UserPen}
+          title="Complete your profile"
+          description="Add your skills and interests so we can match you with problems worth solving."
+        >
+          <Button asChild variant="outline" size="sm">
+            <Link href="/profile">Edit profile</Link>
+          </Button>
+        </EmptyState>
+      ) : result.suggestions.length > 0 ? (
         <ul className="space-y-4">
-          {suggestions.map((suggestion) => (
+          {result.suggestions.map((suggestion) => (
             <li key={suggestion.id}>
               <SuggestionCard suggestion={suggestion} />
             </li>
@@ -38,7 +56,7 @@ export default async function SuggestionsPage() {
         <EmptyState
           icon={Inbox}
           title="No suggestions yet"
-          description="Add a few skills and interests to your profile and we'll match you with problems worth solving."
+          description="There are no fresh problem signals close to your profile right now. Try broadening your skills and interests, or check back after the next ingestion run."
         >
           <Button asChild variant="outline" size="sm">
             <Link href="/profile">Edit profile</Link>
