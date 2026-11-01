@@ -2,14 +2,20 @@
 
 Run from services/ingestion:  python -m jobs.fetch_signals
 
+One-off options (scheduled runs pass neither):
+  --source TYPE        only run sources of this type
+  --backfill-days N    fetch the last N days instead of since last_fetched_at,
+                       and leave last_fetched_at untouched
+
 Each source runs independently: a failure in one is logged and reported in the
 summary, and the others still run. The process exits 1 if any source failed,
 so the scheduled workflow shows up red.
 """
 
+import argparse
 import logging
 import sys
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -21,14 +27,16 @@ from psycopg.rows import dict_row
 from adapters.arxiv_adapter import ArxivAdapter
 from adapters.base import BaseAdapter
 from adapters.github_adapter import GithubAdapter
+from adapters.hn_adapter import HnAdapter
 from common.db import get_connection, upsert_signals
 
 log = logging.getLogger("fetch_signals")
 
-# source_type -> factory taking ingestion_sources.config. Add HN here.
+# source_type -> factory taking ingestion_sources.config.
 ADAPTERS: dict[str, Callable[[Mapping[str, Any]], BaseAdapter]] = {
     "github": lambda config: GithubAdapter(config),
     "arxiv": lambda config: ArxivAdapter(config),
+    "hn": lambda config: HnAdapter(config),
 }
 
 # How far back to look when a source has never been fetched. Matches the
@@ -56,10 +64,10 @@ class SourceResult:
     error: str | None = None
 
 
-def load_sources(conn: psycopg.Connection) -> list[SourceConfig]:
+def load_sources(conn: psycopg.Connection, only: str | None = None) -> list[SourceConfig]:
     """Active ingestion_sources rows that have an adapter, plus defaults for
     adapter types with no row at all. Types whose rows are all inactive are
-    skipped: a curator turned them off."""
+    skipped: a curator turned them off. `only` limits this to one type."""
     with conn.cursor(row_factory=dict_row) as cur:
         cur.execute(
             "SELECT id, source_type, config, is_active, last_fetched_at"
@@ -69,6 +77,8 @@ def load_sources(conn: psycopg.Connection) -> list[SourceConfig]:
 
     sources: list[SourceConfig] = []
     for source_type in ADAPTERS:
+        if only is not None and source_type != only:
+            continue
         typed = [r for r in rows if r["source_type"] == source_type]
         if not typed:
             log.info("No ingestion_sources row for %s; using default config", source_type)
@@ -83,11 +93,19 @@ def load_sources(conn: psycopg.Connection) -> list[SourceConfig]:
     return sources
 
 
-def run_source(conn: psycopg.Connection, src: SourceConfig) -> SourceResult:
+def run_source(
+    conn: psycopg.Connection, src: SourceConfig, backfill: timedelta | None = None
+) -> SourceResult:
+    """`backfill` fetches that far back instead of from the cursor, and leaves
+    the cursor alone: moving it would skip anything between an older cursor
+    and the start of the backfill."""
     result = SourceResult(src.label)
     # Taken before fetching so items updated mid-run are picked up next time.
     started = datetime.now(timezone.utc)
-    since = src.last_fetched_at or started - FIRST_RUN_LOOKBACK
+    if backfill is not None:
+        since = started - backfill
+    else:
+        since = src.last_fetched_at or started - FIRST_RUN_LOOKBACK
     try:
         adapter = ADAPTERS[src.source_type](src.config)
         signals = adapter.fetch(since)
@@ -96,7 +114,7 @@ def run_source(conn: psycopg.Connection, src: SourceConfig) -> SourceResult:
         # next run retries the same window.
         with conn.transaction():
             result.upserted = upsert_signals(signals, conn=conn)
-            if src.row_id is not None:
+            if src.row_id is not None and backfill is None:
                 conn.execute(
                     "UPDATE ingestion_sources SET last_fetched_at = %s WHERE id = %s",
                     (started, src.row_id),
@@ -125,7 +143,24 @@ def print_summary(results: list[SourceResult], expired: int | None) -> None:
         print(f"expired {expired} stale signal(s); refreshed trending_problem_areas")
 
 
-def main() -> int:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Fetch problem signals from active sources.")
+    parser.add_argument("--source", choices=sorted(ADAPTERS), help="only run sources of this type")
+    parser.add_argument(
+        "--backfill-days",
+        type=int,
+        metavar="N",
+        help="one-off: fetch the last N days instead of since last_fetched_at",
+    )
+    args = parser.parse_args(argv)
+    if args.backfill_days is not None and args.backfill_days < 1:
+        parser.error("--backfill-days must be at least 1")
+    return args
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = parse_args(argv)
+    backfill = timedelta(days=args.backfill_days) if args.backfill_days is not None else None
     load_dotenv()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)  # one INFO line per request
@@ -133,7 +168,7 @@ def main() -> int:
     with get_connection() as conn:
         # Each source commits in its own transaction block; REFRESH runs on its own.
         conn.autocommit = True
-        results = [run_source(conn, src) for src in load_sources(conn)]
+        results = [run_source(conn, src, backfill) for src in load_sources(conn, args.source)]
         expired: int | None = None
         try:
             expired = finalize(conn)
