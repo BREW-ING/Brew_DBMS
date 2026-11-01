@@ -22,4 +22,4 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           EMBEDDING_MODEL: ${{ secrets.EMBEDDING_MODEL }}
           EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
-        run: python jobs/embed_signals.py
+        run: python -m jobs.embed_signals
