@@ -2,6 +2,10 @@
 
 Brew recommends hackathon and side-project ideas grounded in real-world "problem signals": open GitHub issues, arXiv abstracts, and Hacker News posts. It embeds these signals, matches them against a user's skills, team size, and time budget, and ranks ideas that are actually feasible rather than generic. It also recommends teammates whose skills complement the user's own.
 
+**Live app:** https://brew-dbms.vercel.app
+
+What's new about the approach is in [NOVELTY.md](NOVELTY.md). The schema, functions, triggers and graph sync are documented in [docs/DATABASE.md](docs/DATABASE.md).
+
 ## Features
 
 - **Grounded idea suggestions:** every suggestion traces back to a real ingested signal from GitHub, arXiv, or Hacker News.
@@ -25,13 +29,78 @@ Brew recommends hackathon and side-project ideas grounded in real-world "problem
 
 ## Architecture
 
-Brew uses three database paradigms: relational (PostgreSQL), vector (pgvector), and graph (Neo4j). A Next.js app reads from all three, and a separate Python service handles ingestion and embedding as scheduled batch jobs.
+Brew uses three database paradigms: relational (PostgreSQL), vector (pgvector), and graph (Neo4j). A Next.js app reads from all three, and a separate Python service handles ingestion and embedding as scheduled batch jobs. The same service also runs a small authenticated HTTP API that the web app calls to re-embed user profiles.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the end-to-end data flow, service boundaries, and failure isolation. The HTTP API is documented in [docs/API.md](docs/API.md).
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the end-to-end data flow, service boundaries, and failure isolation, and [docs/DATABASE.md](docs/DATABASE.md) for the schema. The web app's HTTP API is documented in [docs/API.md](docs/API.md).
 
 ## Local setup
 
-_Coming soon._
+You need Python 3.11, Node.js 20.9 or later, and two hosted databases: a Supabase project and a Neo4j AuraDB instance. Nothing is installed locally. Create them first by following [steps 1 and 2 under Deployment](#1-supabase) (schema, migrations, and optionally the seed data).
+
+### Ingestion service (`services/ingestion`)
+
+Windows PowerShell:
+
+```powershell
+cd services\ingestion
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env   # then fill in DATABASE_URL, SERVICE_KEY and optionally GITHUB_TOKEN
+```
+
+macOS / Linux:
+
+```bash
+cd services/ingestion
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # then fill in DATABASE_URL, SERVICE_KEY and optionally GITHUB_TOKEN
+```
+
+Then, with the venv active and from `services/ingestion` (same commands on every platform):
+
+```
+python -m jobs.fetch_signals     # collect signals from GitHub, arXiv and Hacker News
+python -m jobs.embed_signals     # embed new signals and tag their skills
+uvicorn main:app --reload        # embedding API on http://localhost:8000 (check /health)
+pytest                           # run the tests
+```
+
+The first embedding run downloads the embedding model, so it is slower than later runs.
+
+### Web app (`apps/web`)
+
+Windows PowerShell:
+
+```powershell
+cd apps\web
+npm install
+Copy-Item .env.local.example .env.local   # then fill it in
+npm run dev
+```
+
+macOS / Linux:
+
+```bash
+cd apps/web
+npm install
+cp .env.local.example .env.local          # then fill it in
+npm run dev
+```
+
+The app runs on http://localhost:3000. In `.env.local`, use the same `DATABASE_URL` and `SERVICE_KEY` as the ingestion service, set `INGESTION_URL=http://localhost:8000`, generate `AUTH_SECRET` with `npx auth secret`, and copy `NEO4J_URI`, `NEO4J_USER` and `NEO4J_PASSWORD` from the Aura credentials file. `npm run lint` and `npm run typecheck` run the same checks as CI.
+
+Register an account in the app to use it (the seeded users can't log in). To push pending graph changes to Neo4j locally, call the sync route the scheduled job uses:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/internal/graph-sync -Headers @{ "X-Service-Key" = "<your SERVICE_KEY>" }
+```
+
+```bash
+curl -X POST http://localhost:3000/api/internal/graph-sync -H "X-Service-Key: <your SERVICE_KEY>"
+```
 
 ## Deployment
 
@@ -55,7 +124,7 @@ Set them up in this order, because each step produces a value the next one needs
 
 ### 2. Neo4j AuraDB
 
-1. Create a free instance and save the credentials file it offers. It holds the URI (`neo4j+s://<id>.databases.neo4j.io`), the username (usually `neo4j`) and the password.
+1. Create a free instance and save the credentials file it offers. It holds the URI (`neo4j+s://<id>.databases.neo4j.io`), the username and the password. On newer instances the username is the instance id (the `<id>` in the URI) rather than `neo4j`, so copy it from the file instead of assuming.
 2. In the Aura query console, run `db/neo4j/constraints_and_seed.cypher`.
 
 ### 3. Render (ingestion API)
@@ -69,7 +138,7 @@ The Blueprint sets `autoDeploy: false`, so redeploy from the Render dashboard af
 ### 4. Vercel (web app)
 
 1. Import the repo and set **Root Directory** to `apps/web`. The framework preset is Next.js.
-2. Add the environment variables from the table below, then deploy. The production URL, for example `https://brew.vercel.app`, is `APP_URL`.
+2. Add the environment variables from the table below, then deploy. The production URL, here `https://brew-dbms.vercel.app`, is `APP_URL`.
 
 ### 5. GitHub Actions secrets
 

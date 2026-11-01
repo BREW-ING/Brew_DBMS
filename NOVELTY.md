@@ -68,13 +68,11 @@ A few smaller design choices back this up:
 
 ## Current status
 
-**Done**
-- the database design: 13 tables, feasibility scoring, staleness triggers, the trending view and the sync outbox
-- collection from GitHub and arXiv, with quality filters and tests
-- the Neo4j teammate graph and query
-- demo reports for both databases
+Everything described above is built and running. The live app is at https://brew-dbms.vercel.app.
 
-**Next**
-- Hacker News collection
-- embeddings and automatic skill tagging for semantic search
-- the web app (profile, suggestions feed, teammates, trending, curator tools)
+- **Collection**: GitHub, arXiv and Hacker News adapters, each with its quality filters and tests. Each one fails on its own, so one broken source doesn't stop the others.
+- **Embeddings and skill tagging**: every signal is embedded with `all-MiniLM-L6-v2` (384 dimensions) and tagged with the skills it needs, which is what feeds the feasibility score.
+- **Embedding API**: a small FastAPI service on Render. The web app calls it, with a shared key, to re-embed a user's profile when they change it.
+- **Web app**: on Vercel, with sign-in, the profile editor, the suggestions feed, teammate matches, trending problem areas, reports and the curator pages for sources and signal review.
+- **Scheduled jobs**: GitHub Actions collects new signals every 6 hours, syncs the graph to Neo4j straight after, and embeds the new signals 30 minutes later.
+- **Database**: 13 tables, feasibility scoring, staleness triggers, the trending view and the sync outbox, plus demo reports for both databases.

@@ -1,7 +1,8 @@
 # Benchmarks
 
-Reproducible performance experiments for Brew's three query paths. Results go to
-[docs/BENCHMARKS.md](../docs/BENCHMARKS.md).
+Reproducible performance experiments for Brew's three query paths. Running them writes
+the results to `docs/BENCHMARKS.md`. That file isn't in the repository yet: no results have
+been published, so this folder describes the experiments, not their outcome.
 
 | Benchmark | What it compares |
 |---|---|

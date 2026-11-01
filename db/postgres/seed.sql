@@ -7,7 +7,7 @@
 -- embeddings — run the embedding job to fill them in.
 --
 -- Signal titles/text are invented examples, not real issues or papers, so
--- url is left NULL. Three signals are dated > 30 days ago to demonstrate
+-- url is left NULL. Three signals are dated > 180 days ago to demonstrate
 -- staleness.
 --
 -- Seed users cannot log in: password_hash holds a locked placeholder that no
@@ -214,7 +214,7 @@ INSERT INTO problem_signals (source, external_id, title, raw_text, category_tags
     ('github', 'seed-gh-009',
      'Keyboard navigation trap in date picker component',
      'Tabbing into the date picker never lets focus leave. Fails WCAG 2.1.2 and blocks keyboard-only users from completing the form.',
-     ARRAY['accessibility'], now() - INTERVAL '50 days'),
+     ARRAY['accessibility'], now() - INTERVAL '200 days'),
     ('github', 'seed-gh-010',
      'Categorize bank transactions from CSV exports',
      'Budgeting app users import CSVs from dozens of banks with inconsistent descriptions. Rule-based categorization misses most merchants.',
@@ -264,7 +264,7 @@ INSERT INTO problem_signals (source, external_id, title, raw_text, category_tags
     ('arxiv', 'seed-ax-008',
      'Estimating rooftop solar potential from aerial imagery and LiDAR',
      'We combine roof segmentation with elevation data to estimate per-building solar yield. Municipal planners lack tools to do this at city scale.',
-     ARRAY['climate'], now() - INTERVAL '75 days'),
+     ARRAY['climate'], now() - INTERVAL '240 days'),
     ('arxiv', 'seed-ax-009',
      'Sign-language recognition from monocular video with pose estimation',
      'Pose-based models run on phones but struggle with fingerspelling. We show where current pipelines fail and release a fingerspelling test set.',
@@ -306,7 +306,7 @@ INSERT INTO problem_signals (source, external_id, title, raw_text, category_tags
     ('hn', 'seed-hn-009',
      'Ask HN: Best way to visualize a codebase''s dependency graph?',
      'Onboarding engineers get lost in our monorepo. Static diagrams go stale immediately; we want something queryable and interactive.',
-     ARRAY['developer-tools'], now() - INTERVAL '40 days')
+     ARRAY['developer-tools'], now() - INTERVAL '190 days')
 ON CONFLICT (source, external_id) DO NOTHING;
 
 -- ---------------------------------------------------------
