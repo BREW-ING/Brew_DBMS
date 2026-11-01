@@ -7,13 +7,21 @@ services:
     runtime: python
     plan: free
     rootDir: services/ingestion
-    buildCommand: pip install -r requirements.txt
+    # Downloads the embedding model at build time. Only the project directory
+    # survives from build to runtime, so FASTEMBED_CACHE_PATH points inside it;
+    # otherwise every cold start (free plan spins down when idle) re-downloads
+    # the model inside the web app's 20s request timeout.
+    buildCommand: >-
+      pip install -r requirements.txt &&
+      python -c "from common.embeddings import embed_text; embed_text('warm up')"
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     autoDeploy: false
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: FASTEMBED_CACHE_PATH
+        value: /opt/render/project/src/services/ingestion/.fastembed_cache
       - key: DATABASE_URL
         sync: false
       - key: SERVICE_KEY

@@ -16,9 +16,30 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements.txt
+          cache: pip
+          cache-dependency-path: services/ingestion/requirements.txt
+      - run: python -m pip install -r requirements.txt
       - name: Run ingestion job
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Secret names can't start with GITHUB_, so the secret is GH_TOKEN.
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: python -m jobs.fetch_signals
+      # Drains graph_sync_queue into Neo4j via the web app. Runs even if a
+      # source failed above (fetch_signals exits 1 on partial failure), since
+      # the queue is filled by profile changes, not by ingestion.
+      - name: Sync teammate graph
+        if: ${{ !cancelled() }}
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SERVICE_KEY: ${{ secrets.SERVICE_KEY }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$SERVICE_KEY" ]; then
+            echo "::error::APP_URL and SERVICE_KEY secrets must be set"
+            exit 1
+          fi
+          # Retries cover a cold-starting app; --fail-with-body shows the JSON error on 4xx/5xx.
+          curl --silent --show-error --fail-with-body \
+            --retry 3 --retry-delay 10 --retry-all-errors --max-time 120 \
+            -X POST -H "X-Service-Key: $SERVICE_KEY" \
+            "${APP_URL%/}/api/internal/graph-sync"
