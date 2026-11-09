@@ -123,3 +123,64 @@ FROM graph_sync_queue
 WHERE processed_at IS NULL
 GROUP BY entity_type, op
 ORDER BY entity_type, op;
+
+-- ---------------------------------------------------------
+-- R11. Collaboration network: everyone reachable from a user
+--      within 3 hops, with the fewest hops needed
+--      (recursive CTE: WITH RECURSIVE)
+-- ---------------------------------------------------------
+WITH RECURSIVE edges AS (
+    -- each pair is stored once (user_a < user_b), so walk both directions
+    SELECT user_a AS src, user_b AS dst FROM collaborations
+    UNION ALL
+    SELECT user_b, user_a FROM collaborations
+),
+reach (user_id, hops, path) AS (
+    SELECT u.id, 0, ARRAY[u.id]
+    FROM users u
+    WHERE u.name = 'Aisha Rahman'
+    UNION ALL
+    SELECT e.dst, r.hops + 1, r.path || e.dst
+    FROM reach r
+    JOIN edges e ON e.src = r.user_id
+    WHERE r.hops < 3
+      AND NOT e.dst = ANY (r.path)          -- never revisit a user on the same path
+)
+SELECT u.name, MIN(r.hops) AS hops_away
+FROM reach r
+JOIN users u ON u.id = r.user_id
+WHERE r.hops > 0
+GROUP BY u.name
+ORDER BY hops_away, u.name;
+
+-- ---------------------------------------------------------
+-- R12. Top user(s) for each skill
+--      (correlated subquery: the inner query uses the outer row's skill)
+-- ---------------------------------------------------------
+SELECT s.name AS skill, u.name AS top_user, us.proficiency
+FROM user_skills us
+JOIN users  u ON u.id = us.user_id
+JOIN skills s ON s.id = us.skill_id
+WHERE us.proficiency = (
+    SELECT MAX(us2.proficiency)
+    FROM user_skills us2
+    WHERE us2.skill_id = us.skill_id
+)
+ORDER BY s.name, u.name;
+
+-- ---------------------------------------------------------
+-- R13. Problems that need more skills than the average problem
+--      (nested subqueries: IN + a derived table inside HAVING)
+-- ---------------------------------------------------------
+SELECT ps.source, left(ps.title, 60) AS title,
+       (SELECT COUNT(*) FROM signal_skills ss WHERE ss.signal_id = ps.id) AS skills_needed
+FROM problem_signals ps
+WHERE ps.id IN (
+    SELECT signal_id
+    FROM signal_skills
+    GROUP BY signal_id
+    HAVING COUNT(*) > (
+        SELECT AVG(n) FROM (SELECT COUNT(*) AS n FROM signal_skills GROUP BY signal_id) per_signal
+    )
+)
+ORDER BY skills_needed DESC, title;
